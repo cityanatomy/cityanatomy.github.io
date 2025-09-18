@@ -3,58 +3,93 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My GitHub Pages Site</title>
+  <title>Anatomy City Map</title>
+  <link href="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.css" rel="stylesheet" />
   <style>
-    body {
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
       font-family: system-ui, sans-serif;
-      max-width: 700px;
-      margin: 2rem auto;
-      padding: 0 1rem;
-      line-height: 1.6;
-      background: #f9f9f9;
-      color: #333;
+      display: flex;
+      flex-direction: column;
     }
     header, footer {
       text-align: center;
-      margin: 2rem 0;
-    }
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-    }
-    nav a {
-      margin: 0 0.5rem;
-      text-decoration: none;
-      color: #0070f3;
-    }
-    nav a:hover {
-      text-decoration: underline;
-    }
-    main {
-      background: white;
       padding: 1rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      background: #f8f8f8;
+      font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    #map {
+      flex: 1;
+      width: 100%;
+    }
+    footer {
+      font-weight: normal;
+      font-size: 0.9rem;
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>Welcome to My Site</h1>
-    <nav>
-      <a href="#">Home</a>
-      <a href="#">About</a>
-      <a href="#">Projects</a>
-    </nav>
+    <h1>Anatomy City Map</h1>
   </header>
 
-  <main>
-    <h2>Hello, world!</h2>
-    <p>This is a basic GitHub Pages site. You can edit <code>index.html</code> in your repo and push changes — they’ll go live automatically.</p>
-  </main>
+  <div id="map"></div>
 
   <footer>
-    <p>&copy; 2025 My Name</p>
+    <p>&copy; 2025 Anatomy City • Powered by 
+      <a href="https://openfreemap.org" target="_blank">OpenFreeMap</a>
+    </p>
   </footer>
+
+  <script src="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.js"></script>
+  <script>
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: 'https://tiles.openfreemap.org/styles/liberty',
+      center: [-97.7431, 30.2672], // Austin, TX
+      zoom: 15,
+      pitch: 60,
+      bearing: -17.6,
+      antialias: true
+    });
+
+    // Add zoom/rotation controls
+    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+    // Wait for the map to load before adding 3D buildings
+    map.on('load', () => {
+      // Find the first symbol layer so we can insert buildings underneath labels
+      const layers = map.getStyle().layers;
+      let labelLayerId;
+      for (const layer of layers) {
+        if (layer.type === 'symbol' && layer.layout['text-field']) {
+          labelLayerId = layer.id;
+          break;
+        }
+      }
+
+      // Add 3D building layer
+      map.addLayer(
+        {
+          id: '3d-buildings',
+          source: 'openmaptiles',
+          'source-layer': 'building',
+          filter: ['==', ['get', 'extrude'], 'true'],
+          type: 'fill-extrusion',
+          minzoom: 15,
+          paint: {
+            'fill-extrusion-color': '#aaa',
+            'fill-extrusion-height': ['get', 'render_height'],
+            'fill-extrusion-base': ['get', 'render_min_height'],
+            'fill-extrusion-opacity': 0.7
+          }
+        },
+        labelLayerId
+      );
+    });
+  </script>
 </body>
 </html>
